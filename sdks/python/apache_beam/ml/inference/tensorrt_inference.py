@@ -123,27 +123,12 @@ class TensorRTEngine:
     self.cpu_allocations = []
 
     # TODO(https://github.com/NVIDIA/TensorRT/issues/2557):
-    # Clean up when fixed upstream and lower bound for tensorrt is updated.
-    def nptype(trt_type):
-      """
-      Returns the numpy-equivalent of a TensorRT :class:`DataType` .
-      :arg trt_type: The TensorRT data type to convert.
-      :returns: The equivalent numpy type.
-      """
-
-      mapping = {
-          float32: np.float32,
-          float16: np.float16,
-          int8: np.int8,
-          int32: np.int32,
-          bool: np.bool_,
-          uint8: np.uint8,
-      }
-      if trt_type in mapping:
-        return mapping[trt_type]
-      raise TypeError(
-          "Could not resolve TensorRT datatype to an equivalent numpy datatype."
-      )
+    # Clean up when fixed upstream.
+    try:
+      _ = np.bool
+    except AttributeError:
+      # numpy >= 1.24.0
+      np.bool = np.bool_
 
     # Setup I/O bindings.
     for i in range(self.engine.num_bindings):
@@ -155,7 +140,7 @@ class TensorRTEngine:
       binding = {
           'index': i,
           'name': name,
-          'dtype': np.dtype(nptype(dtype)),
+          'dtype': np.dtype(trt.nptype(dtype)),
           'shape': list(shape),
           'allocation': allocation,
           'size': size
